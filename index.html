@@ -454,7 +454,7 @@ button{cursor:pointer}
  color:var(--muted)
 }
 
-.install{display:none}
+
 
 small{color:var(--muted)}
 
@@ -575,7 +575,23 @@ small{color:var(--muted)}
 <!-- KALENDARZ -->
 
 <section id="calendarPage" hidden>
+<div class="panel" id="installHomePanel">
+  <h2>📱 Mój Trening na telefonie</h2>
 
+  <p class="muted">
+    Zainstaluj aplikację na ekranie głównym i uruchamiaj ją jak zwykłą aplikację.
+  </p>
+
+  <button class="primary" id="installHomeBtn">
+    📲 ZAINSTALUJ APLIKACJĘ
+  </button>
+
+  <div id="installHomeHelp"
+       class="muted"
+       style="margin-top:10px;font-size:13px;text-align:center;">
+    Jedno kliknięcie i aplikacja będzie na ekranie telefonu.
+  </div>
+</div>
  <div class="panel">
 
   <h2>📅 Kalendarz treningów</h2>
@@ -2019,35 +2035,84 @@ document
  );
 
 
-window.addEventListener(
- "beforeinstallprompt",
- e=>{
+const installBtn = document.getElementById("installBtn");
+const installHomeBtn = document.getElementById("installHomeBtn");
+const installHomeHelp = document.getElementById("installHomeHelp");
+
+function showInstallHelp() {
+  installHomeHelp.innerHTML = `
+    <strong>📱 Instalacja ręczna</strong><br><br>
+    Jeśli nie pojawiło się okno instalacji:<br>
+    kliknij w Chrome <b>⋮</b> → 
+    <b>Dodaj do ekranu głównego</b>
+    lub <b>Zainstaluj aplikację</b>.
+  `;
+}
+
+async function installApp() {
+
+  if (deferredInstall) {
+
+    deferredInstall.prompt();
+
+    const result = await deferredInstall.userChoice;
+
+    if (result.outcome === "accepted") {
+      installHomeBtn.textContent = "✅ APLIKACJA ZAINSTALOWANA";
+      installHomeBtn.disabled = true;
+
+      if (installBtn) {
+        installBtn.textContent = "✅ Aplikacja zainstalowana";
+        installBtn.disabled = true;
+      }
+
+      installHomeHelp.textContent =
+        "Mój Trening Siłowy jest już na ekranie telefonu.";
+    }
+
+    deferredInstall = null;
+    return;
+  }
+
+  showInstallHelp();
+}
+
+window.addEventListener("beforeinstallprompt", e => {
 
   e.preventDefault();
 
-  deferredInstall=e;
+  deferredInstall = e;
 
-  installBtn.style.display="block";
+  installHomeBtn.textContent =
+    "📲 ZAINSTALUJ APLIKACJĘ";
 
- }
-);
+  installHomeHelp.textContent =
+    "Kliknij przycisk, aby dodać aplikację do ekranu głównego.";
+});
 
+installHomeBtn.onclick = installApp;
 
-installBtn.onclick=async()=>{
+if (installBtn) {
+  installBtn.onclick = installApp;
+}
 
- if(deferredInstall){
+window.addEventListener("appinstalled", () => {
 
-  deferredInstall.prompt();
+  installHomeBtn.textContent =
+    "✅ APLIKACJA ZAINSTALOWANA";
 
-  await deferredInstall.userChoice;
+  installHomeBtn.disabled = true;
 
-  deferredInstall=null;
+  installHomeHelp.textContent =
+    "Mój Trening Siłowy jest już zainstalowany na tym telefonie.";
 
-  installBtn.style.display="none";
+  if (installBtn) {
+    installBtn.textContent =
+      "✅ Aplikacja zainstalowana";
 
- }
-
-};
+    installBtn.disabled = true;
+  }
+});
 
 
 if("serviceWorker" in navigator){
