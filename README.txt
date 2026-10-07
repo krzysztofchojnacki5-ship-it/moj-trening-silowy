@@ -1,40 +1,35 @@
-MÓJ TRENING SIŁOWY — PWA v3
+MÓJ TRENING SIŁOWY — PAKIET PWA v6
+===================================
 
-CO NOWE:
-- dodawanie własnych ćwiczeń do Treningu A lub B,
-- własna ikonka/emoji ćwiczenia,
-- usuwanie własnych ćwiczeń,
-- zapis własnych ćwiczeń w pamięci przeglądarki,
-- wszystkie funkcje z v2: kalendarz, 4 serie, historia, statystyki, timer, eksport/import, PWA.
+Ta paczka jest przygotowana do podmiany plików aplikacji na GitHub Pages.
 
-URUCHOMIENIE NA KOMPUTERZE:
-1. Rozpakuj ZIP.
-2. Otwórz folder w Visual Studio Code.
-3. Otwórz index.html przez Live Server.
-4. W Narzędzia -> Własne ćwiczenia możesz dodać ćwiczenia.
+CO ROBISZ:
+1. Rozpakuj ten ZIP.
+2. Otwórz folder MojTrening.
+3. Zaznacz WSZYSTKIE pliki z folderu.
+4. W swoim repozytorium GitHub usuń/podmień stare pliki aplikacji tymi z paczki.
+5. Zapisz zmiany / Commit changes.
+6. Odczekaj chwilę na GitHub Pages.
+7. Otwórz aplikację ponownie w Chrome na telefonie.
 
-DARMOWE WRZUCENIE DO INTERNETU — GITHUB PAGES:
-1. Wejdź na https://github.com i załóż darmowe konto.
-2. Kliknij + -> New repository.
-3. Nazwij repozytorium np. moj-trening-silowy.
-4. Ustaw Public.
-5. Create repository.
-6. Kliknij "uploading an existing file" albo Add file -> Upload files.
-7. Wgraj ZAWARTOŚĆ folderu MojTrening (index.html, manifest.json, sw.js, avatar.jpg, icon-192.png, icon-512.png).
-8. Kliknij Commit changes.
-9. Wejdź w Settings -> Pages.
-10. W "Build and deployment" wybierz Source: Deploy from a branch.
-11. Branch: main, folder: / (root).
-12. Save.
-13. Po chwili GitHub pokaże adres strony. Będzie mniej więcej:
-   https://TWOJ_LOGIN.github.io/moj-trening-silowy/
+NIE MUSISZ RĘCZNIE EDYTOWAĆ:
+- index.html
+- manifest.json
+- sw.js
+
+W tej wersji poprawiono:
+- obsługę instalacji PWA,
+- przycisk instalacji na stronie Start,
+- przycisk instalacji w Narzędziach,
+- komunikat awaryjny, gdy przeglądarka nie udostępnia automatycznego okna instalacji,
+- manifest PWA (id, scope, ikony, tryb standalone),
+- aktualizację Service Workera (v6),
+- wykrywanie, czy aplikacja jest już zainstalowana.
 
 WAŻNE:
-- GitHub Pages działa po HTTPS, więc PWA i Service Worker mogą działać.
-- Na telefonie otwierasz adres w Chrome.
-- Chrome -> menu ⋮ -> "Dodaj do ekranu głównego" / "Zainstaluj aplikację".
-- Dane treningowe są lokalne dla danego urządzenia/przeglądarki. Dlatego przed zmianą telefonu używaj Narzędzia -> Eksport danych, a na nowym urządzeniu Import danych.
-- Jeśli zmienisz kod później, ponownie wrzuć zmienione pliki na GitHub. Service Worker może potrzebować chwili na odświeżenie.
+Strona internetowa nie może bez zgody Androida samodzielnie utworzyć ikony na ekranie.
+Jeżeli dana przeglądarka nie udostępni automatycznego okna instalacji, aplikacja pokaże
+instrukcję użycia menu przeglądarki: ⋮ -> Dodaj do ekranu głównego / Zainstaluj aplikację.
 
-UWAGA:
-GitHub Pages hostuje pliki za darmo, ale nie jest bazą danych. Nie zapisujemy danych treningowych na serwerze — zapis odbywa się lokalnie na urządzeniu.
+Po podmianie NIE otwieraj pliku index.html bezpośrednio z telefonu. Otwórz aplikację
+przez jej adres HTTPS na GitHub Pages.

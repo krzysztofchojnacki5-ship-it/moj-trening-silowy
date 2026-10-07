@@ -1,21 +1,20 @@
 {
+  "id": "./",
   "name": "Mój Trening Siłowy",
   "short_name": "Mój Trening",
+  "description": "Dziennik treningowy A/B — zapisuj ciężary, powtórzenia i progres.",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
   "background_color": "#0e0f10",
   "theme_color": "#111111",
   "lang": "pl",
   "icons": [
-    {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
+    {"src":"icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},
+    {"src":"icon-512.png","sizes":"512x512","type":"image/png","purpose":"any"},
+    {"src":"icon-192.png","sizes":"192x192","type":"image/png","purpose":"maskable"},
+    {"src":"icon-512.png","sizes":"512x512","type":"image/png","purpose":"maskable"}
   ]
 }
