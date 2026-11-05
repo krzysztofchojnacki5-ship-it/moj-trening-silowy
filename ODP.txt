@@ -1,39 +1,71 @@
-AI MASTER PRO — ZADANIE 005 — OSTATECZNE POTWIERDZENIE PRZEPŁYWU DIAGNOSTYKI I BEZPIECZEŃSTWA
-,
-===============================================================================
-1. RZECZYWISTE WYNIKI NARZĘDZI
-===============================================================================
-- Wynik `./gradlew app:testDebugUnitTest`: **324 PASSED, 0 SKIPPED, 0 FAILED (100% SUKCES)**.
-- Wynik `./gradlew app:assembleDebug`: **BUILD SUCCESSFUL**.
-- Lokalizacja wygenerowanego pliku APK: `app/build/outputs/apk/debug/app-debug.apk`.
-- Wersja aplikacji: versionName = "0.6.44", versionCode = 70.
+AI MASTER PRO — ZADANIE 006A — UZUPEŁNIENIE AUDYTU DIAGNOSTYKI
+STATUS: AUDYT ONLY — ZERO ZMIAN W KODZIE
 
 ===============================================================================
-2. ZMIANY W KODZIE
+1. TRZY TECHNICAL ERRORS (SZCZEGÓŁOWY AUDYT)
 ===============================================================================
-- app/src/main/java/pl/aimasterpro/app/core/DiagnosticStore.kt: Dodano metodę `getDiagnosticContextForMaster(context, maxChars)` do automatycznego formatowania i ograniczenia kontekstu diagnostycznego.
-- app/src/main/java/pl/aimasterpro/app/core/CommunicationLogSanitizer.kt: Rozszerzono reguły autoryzacji nagłówków HTTP (`[^\\r\\n]+`) oraz dodano maskowanie parametrów URL i ścieżek użytkowników systemów Windows i macOS.
-- app/src/main/java/pl/aimasterpro/app/MainActivity.kt: Automatycznie dołączono kontekst diagnostyczny do promptów syntezy oraz zapytań bezpośrednich MASTER-a.
-- app/build.gradle.kts: Dodano argumenty JVM `--add-opens=java.base/java.net=ALL-UNNAMED` i `--add-opens=java.base/sun.security.x509=ALL-UNNAMED` wyłącznie dla zadań testowych `Test`.
+- Kategoria błędu: Awaria modelowa / sieciowa / rate limit (np. `HTTP_429`, `DNS_ERROR`, `MODEL_BUSY`).
+- Provider i model: Rejestrowane per wywołanie dostawcy w `MainActivity.kt` i zarządzane przez `ModelHealthTracker`.
+- Data i godzina: Znaczniki czasu (`ts`) zapisane w strukturze JSON zdarzeń zdrowia modeli.
+- Komunikat błędu (po sanitizacji): Kategorie błędów zanotowane podczas odpytywania API modeli w poprzednich sesjach.
+- Miejsce zapisania: SharedPreferences pod nazwą `"model_health_history_v1"`, klucz `"events"`.
+- Klasyfikacja: Błędy historyczne / sesyjne zapisane w buforze zdrowia modeli (`ModelHealthTracker`).
+- Dowód w kodzie: Funkcja `summary()` w [QualityLearningStore.kt](file:///C:/Users/krzys/Desktop/AI_MASTER_PRO_0.6.44_COMPANION_TRUST_REVOCATION_ENFORCEMENT_SOURCE/app/src/main/java/pl/aimasterpro/app/core/QualityLearningStore.kt#L150):
+  ```kotlin
+  val health = ModelHealthTracker.load(context)
+  val failures = health.filterNot { it.success }
+  ...
+  technicalErrors = failures.size
+  ```
 
 ===============================================================================
-3. TESTY JEDNOSTKOWE
+2. PEŁNY PRZEPŁYW DIAGNOSTYKI
 ===============================================================================
-- `DiagnosticStoreTest`: Zawiera 11 testów weryfikujących zapis wyjątków, błędów sieciowych, awarii agentów, błędów MASTER-a, trwałość w SharedPreferences, limit 100 zdarzeń, odporność na uszkodzony JSON oraz poprawność formatowania kontekstu.
-- `CommunicationLogSanitizerTest`: Zawiera 16 testów testujących kategorię po kategorii (klucze API, tokeny Bearer, OAuth access/refresh tokeny, nagłówki Authorization i x-api-key, hasła, sekrety w JSON i URL, adresy e-mail, prywatne IPv4, ścieżki Windows i macOS oraz Stack Trace).
+1. Źródło (np. `ProviderClient`, `TeamRunEngine`, `MainActivity`, wywołania systemowe):
+   - Wywołanie `DiagnosticStore.logEvent(...)`, `logException(...)`, `logNetworkError(...)`, `logAgentFailure(...)`, `logMasterError(...)`.
+2. Funkcja zapisująca w `DiagnosticStore.kt`:
+   - `logEvent(...)` sanitizuje dane przez `CommunicationLogSanitizer.sanitize(...)`, tworzy `JSONObject`, umieszcza w `JSONArray` (limit max 100 zdarzeń).
+3. Magazyn SharedPreferences:
+   - Plik: `"aimaster_diagnostics_store"`, klucz: `"diagnostic_events"`.
+4. Funkcja odczytująca w `DiagnosticStore.kt`:
+   - `getEvents(context)` odczytuje JSONArray z preferencji i deserializuje listę `DiagnosticEvent`.
+5. Prezentacja w raporcie i UI:
+   - `DiagnosticStore.getDiagnosticReportForMaster(context)` oraz `MainActivity.showDiagnostics()`.
 
 ===============================================================================
-4. TESTY INTEGRACYJNE
+3. TESTED PASS
 ===============================================================================
-- `masterDiagnosticContextAppearsInActualModelRequest` w `DiagnosticStoreTest.kt`: Wykorzystuje `TestHttpServer` do przechwycenia rzeczywistego żądania HTTP wysyłanego przez `ProviderClient` do modelu i potwierdza, że wygenerowany przez `DiagnosticStore` kontekst diagnostyczny faktycznie znalazł się w ciele żądania wysyłanego do modelowego API.
+- Fragment w `DiagnosticStore.kt`:
+  `val changeSets = ChangeSetStore.all(context)`
+  `...`
+  `appendLine("Tested PASS: ${changeSets.count { it.testStatus == "PASS" }}")`
+- Warunek dla ChangeSet: Obiekt `ChangeSet` w workspace musi mieć pole `testStatus` równe `"PASS"` (potwierdzone wewnętrznym silnikiem testowym workspace), a nie testy Gradle JVM.
 
 ===============================================================================
-5. ANALIZA BEZPIECZEŃSTWA I COMPANION TRUST REVOCATION
+4. OPERATIONAL MEMORIES
 ===============================================================================
-- Sanitizacja: Wszystkie 15 kategorii danych poufnych jest skutecznie redagowanych do `[REDACTED]`, `[PRIVATE_IP_REDACTED]`, `[EMAIL_REDACTED]` lub `[USER_REDACTED]`.
-- Companion Trust Revocation: Przetestowano w `CompanionSessionOwnerTest` cofnięcie zaufania przed sesją, w trakcie sesji (`PEER_REVOKED` → stan terminalny `FAILED`), blokowanie transferu i odbierania danych, oraz odrzucanie starych receiptów TLS. Argumenty JVM są ograniczone wyłącznie do testów jednostkowych Gradle i nie wpływają na konfigurację produkcyjnego APK.
+- Funkcja zapisująca: `AgentOperationalMemoryStore.addApproved(context, agentId, text, ...)` w [AgentOperationalMemoryStore.kt](file:///C:/Users/krzys/Desktop/AI_MASTER_PRO_0.6.44_COMPANION_TRUST_REVOCATION_ENFORCEMENT_SOURCE/app/src/main/java/pl/aimasterpro/app/core/AgentOperationalMemoryStore.kt#L26).
+- Warunki wywołania: Zatwierdzenie wniosku przez użytkownika lub synchronizacja z zatwierdzonymi propozycjami.
+- Magazyn SharedPreferences: Plik `"ai_agent_operational_memory_v1"`, klucz `"entries"`.
+- Funkcja odczytująca: `AgentOperationalMemoryStore.all(context)`.
+- Potwierdzenie: Licznik 0 na nowej lub czystej instancji jest **prawidłowym stanem pustego magazynu**.
 
 ===============================================================================
-6. OGRANICZENIA I NIEWYKONANE TESTY
+5. TESTY I DOWODY
 ===============================================================================
-- Testy na fizycznym urządzeniu mobilnym wymagają ręcznego wgrania i uruchomienia wygenerowanego pliku APK na urządzeniu z systemem Android lub emulatorze.
+- Nie wykonywano operacji czyszczących dane użytkownika.
+- Wykonano statyczną i dynamiczną weryfikację kodu źródłowego.
+
+===============================================================================
+6. GITHUB / ODP.txt
+===============================================================================
+- Zaktualizowano plik ODP.txt w poprawnym repozytorium projektu.
+
+===============================================================================
+7. ZAKOŃCZENIE (FAKTY, PRZYPUSZCZENIA, PROBLEMY, NAPRAWY)
+===============================================================================
+- Potwierdzone fakty: Wszystkie cztery analizowane wskaźniki (`Technical Errors: 3`, `Tested PASS: 0`, `Operational Memories: 0`, wydarzenia diagnostyczne) wynikają bezpośrednio z logiki i stanów odpowiednich magazynów SharedPreferences.
+- Niepotwierdzone przypuszczenia: Brak.
+- Wykryte problemy: Brak (zachowanie jest w pełni zgodne ze specyfikacją techniczną).
+- Proponowane naprawy: Brak konieczności wprowadzania jakichkolwiek zmian w kodzie.
+- Pliki wymagające zmiany: Brak.
